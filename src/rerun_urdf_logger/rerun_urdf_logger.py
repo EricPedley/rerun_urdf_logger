@@ -11,12 +11,11 @@ from typing import Optional
 
 from PIL import Image
 import numpy as np
-import rerun as rr  # pip install rerun-sdk
+import rerun as rr
 import scipy.spatial.transform as st
 import trimesh
 from urdf_parser_py import urdf as urdf_parser
 from pathlib import Path
-from line_profiler import profile
 from rerun.datatypes import RotationAxisAngle, Angle
 
 class URDFLogger:
@@ -45,7 +44,6 @@ class URDFLogger:
     def joint_entity_path(self, joint: urdf_parser.Joint) -> str:
         return self.link_entity_path(self.urdf.link_map[joint.child])
 
-    @profile
     def log(self, joint_angles: Optional[dict | list | tuple] = None) -> None:
         """Log the URDF to Rerun using an optional set of joint angles.
 
@@ -78,7 +76,6 @@ class URDFLogger:
         for i, visual in enumerate(link.visuals):
             self.log_visual(entity_path + f"/visual_{i}", visual)
 
-    @profile
     def log_joint(self, entity_path: str, joint: urdf_parser.Joint, angle: float = 0.0) -> None:
         """Log a joint transform, applying the provided joint angle.
 
@@ -115,7 +112,6 @@ class URDFLogger:
             self.mesh_data_cache[path] = trimesh.load_mesh(path)
         return self.mesh_data_cache[path]
 
-    @profile
     def log_visual(self, entity_path: str, visual: urdf_parser.Visual) -> None:
         if entity_path in self.meshes_cache:
             return
@@ -180,7 +176,6 @@ class URDFLogger:
         self.meshes_cache[entity_path] = mesh
 
 
-@profile
 def log_trimesh(entity_path: str, mesh: trimesh.Trimesh) -> None:
     vertex_colors = albedo_texture = vertex_texcoords = None
     if isinstance(mesh.visual, trimesh.visual.color.ColorVisuals):
