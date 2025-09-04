@@ -26,7 +26,6 @@ class URDFLogger:
         urdf_parent_path =Path(filepath).absolute().parent
         urdf_contents = urdf_contents.replace('filename="', f'filename="{urdf_parent_path}/')
         self.urdf: urdf_parser.Robot = urdf_parser.URDF.from_xml_string(urdf_contents)
-        self.mat_name_to_mat = {mat.name: mat for mat in self.urdf.materials}
         self.entity_to_transform = {}
         self.root_path = root_path
         self.meshes_cache = {}
@@ -100,7 +99,7 @@ class URDFLogger:
             origin_transform[:3, 3] = base_trans
             rr.log(self.root_path + entity_path[:-len('/link')], rr.Transform3D(translation=origin_transform[:3, 3], mat3x3=origin_transform[:3, :3]), static=True)
             joint_axis = joint.axis if joint.axis is not None else [1, 0, 0]
-            rr.log(self.root_path + entity_path, rr.Transform3D(rotation_axis_angle=RotationAxisAngle(joint_axis, Angle(angle))))
+            rr.log(self.root_path + entity_path, rr.Transform3D.from_fields(quaternion=st.Rotation.from_rotvec(np.array(joint_axis) * angle).as_quat()))
             self.joint_transform_set.add(entity_path)
         else:
             joint_axis = joint.axis if joint.axis is not None else [1, 0, 0]
@@ -115,12 +114,7 @@ class URDFLogger:
     def log_visual(self, entity_path: str, visual: urdf_parser.Visual) -> None:
         if entity_path in self.meshes_cache:
             return
-        material = None
-        if visual.material is not None:
-            if visual.material.color is None and visual.material.texture is None:
-                material = self.mat_name_to_mat[visual.material.name]
-            else:
-                material = visual.material
+        material = visual.material
 
         transform = np.eye(4)
         if visual.origin is not None and visual.origin.xyz is not None:
